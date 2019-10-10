@@ -86,9 +86,15 @@ public class BiomeSearcher implements Runnable {
 	 * Creates a random, default world using the default (empty) generator
 	 * options.
 	 */
-	World createWorld() throws MinecraftInterfaceException {
+	World createDownsizedWorld(WorldSeed seed) throws MinecraftInterfaceException {
 		Consumer<World> onDispose = world -> {};
-		WorldOptions worldOptions = new WorldOptions(WorldSeed.random(), WorldType.DEFAULT); // TODO allow players to choose?
+		WorldOptions worldOptions = new WorldOptions(seed, WorldType.CUSTOMIZED, "{\"biomeSize\":1}");
+		return this.mWorldBuilder.from(this.mMinecraftInterface, onDispose, worldOptions);
+	}
+	
+	World createWorld(WorldSeed seed) throws MinecraftInterfaceException {
+		Consumer<World> onDispose = world -> {};
+		WorldOptions worldOptions = new WorldOptions(seed, WorldType.DEFAULT); // TODO allow players to choose?
 		return this.mWorldBuilder.from(this.mMinecraftInterface, onDispose, worldOptions);
 	}
 	
@@ -117,9 +123,16 @@ public class BiomeSearcher implements Runnable {
 	HashMap<Biome, String> rejectedBiomeSets = new HashMap<Biome, String>(); boolean searchRejectedBiomesSets = true;
 	StructureSearcher.Type[] structures = {};
 	//, Biome.forest, Biome.desert, Biome.birchForest, Biome.plains
+	
+	boolean accept(World world)
+	throws MinecraftInterfaceException, UnknownBiomeIndexException, InterruptedException, IOException, FormatException, MinecraftInterfaceCreationException
+	{
+		return accept(world, mSearchQuadrantWidth, mSearchQuadrantHeight);
+	}
 
-	boolean accept(World world) throws MinecraftInterfaceException, UnknownBiomeIndexException, InterruptedException,
-			IOException, FormatException, MinecraftInterfaceCreationException {
+	boolean accept(World world, int width, int height)
+	throws MinecraftInterfaceException, UnknownBiomeIndexException, InterruptedException, IOException, FormatException, MinecraftInterfaceCreationException
+	{
 		//! This returns the actual spawnpoint or should... but it doesn't it is off. Double checking
 		//! in amidst and it is incorrect I created the world to see if this was correct and amidst was off
 		//! this is incorrect and amidst is... no idea why...
@@ -127,19 +140,21 @@ public class BiomeSearcher implements Runnable {
 		//CoordinatesInWorld searchCenter = world.getSpawnWorldIcon().getCoordinates();
 
 		// ! This returns [0, 0] everytime
-		CoordinatesInWorld searchCenter = CoordinatesInWorld.origin();
+		//CoordinatesInWorld searchCenter = CoordinatesInWorld.origin();
 
-		if (searchCenter == null) {
-			// The world spawn could not be determined.
-			return false;
-		}
-		long searchCenterX = searchCenter.getX();
-		long searchCenterY = searchCenter.getY();
+		//if (searchCenter == null) {
+		//	// The world spawn could not be determined.
+		//	return false;
+		//}
+		//long searchCenterX = searchCenter.getX();
+		//long searchCenterY = searchCenter.getY();
 		int[] biomeCodes = getBiomeCodes(
-				searchCenterX - this.mSearchQuadrantWidth,
-				searchCenterY - this.mSearchQuadrantHeight,
-				2 * this.mSearchQuadrantWidth,
-				2 * this.mSearchQuadrantHeight);
+				//searchCenterX -width, If they're zero everytime why get these Vars?
+				//searchCenterY -height,
+				-width,
+				-height,
+				2 * width,
+				2 * height);
 		int biomeCodesCount = biomeCodes.length;
 		//System.out.println(biomeCodesCount);
 		
@@ -152,7 +167,7 @@ public class BiomeSearcher implements Runnable {
 			biomes = GUI.manageCheckedCheckboxes();
 			if (biomes.length == 0 && searchBiomes) {
 				searchBiomes = false;
-				System.out.println(searchBiomes);
+				//System.out.println(searchBiomes);
 			}
 		}
 		
@@ -160,7 +175,7 @@ public class BiomeSearcher implements Runnable {
 			rejectedBiomes = GUI.manageCheckedCheckboxesRejected();
 			if (rejectedBiomes.length == 0 && searchRejectedBiomes) {
 				searchRejectedBiomes = false;
-				System.out.println(searchRejectedBiomes);
+				//System.out.println(searchRejectedBiomes);
 			}
 		}
 
@@ -168,7 +183,7 @@ public class BiomeSearcher implements Runnable {
 			biomeSets = GUI.manageCheckedCheckboxesSets();
 			if (biomeSets.size() == 0 && searchBiomeSets) {
 				searchBiomeSets = false;
-				System.out.println(searchBiomeSets);
+				//System.out.println(searchBiomeSets);
 			}
 		}
 
@@ -176,7 +191,7 @@ public class BiomeSearcher implements Runnable {
 			rejectedBiomeSets = GUI.manageCheckedCheckboxesSetsRejected();
 			if (rejectedBiomeSets.size() == 0 && searchRejectedBiomesSets) {
 				searchRejectedBiomesSets = false;
-				System.out.println(rejectedBiomeSets);
+				//System.out.println(rejectedBiomeSets);
 			}
 		}
 		
@@ -186,26 +201,25 @@ public class BiomeSearcher implements Runnable {
 			return false;
 		}
 		
-		boolean hasRequiredStructures = false;
-		if (Main.DEV_MODE) {
-			if (structures.length == 0 && GUI.findStructures.isSelected()) {
-				Util.console("Creating Structures from list...");
-				structures = GUI.manageCheckedCheckboxesFindStructures();
-			}
-		}
+		//boolean hasRequiredStructures = false;
+		//if (Main.DEV_MODE) {
+		//	if (structures.length == 0 && GUI.findStructures.isSelected()) {
+		//		Util.console("Creating Structures from list...");
+		//		structures = GUI.manageCheckedCheckboxesFindStructures();
+		//	}
+		//}
 		
-		if (structures.length > 0) {
-			hasRequiredStructures = StructureSearcher.hasStructures(
-					structures,
-					world,
-					searchCenterX,
-					searchCenterY
-					);
-			
-			// Could meet structure requirements, move to next seed.
-			if (!hasRequiredStructures) return false;	
-		}
-		
+		//if (structures.length > 0) {
+		//	hasRequiredStructures = StructureSearcher.hasStructures(
+		//			structures,
+		//			world,
+		//			0,
+		//			0
+		//			);
+		//	
+		//	// Could meet structure requirements, move to next seed.
+		//	if (!hasRequiredStructures) return false;	
+		//}
 		
 		// Start with a set of all biomes to find.
 		Set<Biome> undiscoveredBiomes = new HashSet<>(Arrays.asList(biomes));
@@ -243,10 +257,12 @@ public class BiomeSearcher implements Runnable {
 	//			&& (GUI.findStructures.isSelected() && hasStructures)) {
 			return true;
 		}
-		System.out.println(undiscoveredBiomes);
-		System.out.println(undiscoveredBiomeSets);
+		//System.out.println(undiscoveredBiomes);
+		//System.out.println(undiscoveredBiomeSets);
 		return false;
 	}
+	
+	
 
 	/**
 	 * Updates the progress output for a world that has been rejected.
@@ -300,9 +316,16 @@ public class BiomeSearcher implements Runnable {
 		
 		while (acceptedWorldsCount < this.mMaximumMatchingWorldsCount && GUI.running) {
 			if (!GUI.paused) {
+				WorldSeed seed = WorldSeed.random();
+				//tinyWorld is the same as world but the biomes are scaled 1/8th the size
+				World tinyWorld;
 				World world;
+				boolean isTinyWorldAccepted = false;
+				boolean isWorldAccepted = false;
+				
+				//Make tinyWorld
 				try {
-					world = createWorld();
+					tinyWorld = createDownsizedWorld(seed);
 				} catch (MinecraftInterfaceException e) {
 					// TODO log
 					rejectedWorldsCount++;
@@ -310,9 +333,11 @@ public class BiomeSearcher implements Runnable {
 					updateRejectedWorldsProgress(rejectedWorldsCount);
 					continue;
 				}
-				boolean isWorldAccepted;
+				
+				//Test tinyWorld
 				try {
-					isWorldAccepted = accept(world);
+					isTinyWorldAccepted = accept(tinyWorld, this.mSearchQuadrantWidth/8, this.mSearchQuadrantHeight/8);
+					//isTinyWorldAccepted = accept(tinyWorld);
 				} catch (MinecraftInterfaceException | UnknownBiomeIndexException e) {
 					// Biome data for the world could not be obtained.
 					// Biome data included an unknown biome code.
@@ -322,6 +347,33 @@ public class BiomeSearcher implements Runnable {
 					updateRejectedWorldsProgress(rejectedWorldsCount);
 					continue;
 				}
+				//Create Fullsized world
+				try {
+					world = createWorld(seed);
+				} catch (MinecraftInterfaceException e) {
+					// TODO log
+					rejectedWorldsCount++;
+					totalRejectedSeedCount++;
+					updateRejectedWorldsProgress(rejectedWorldsCount);
+					continue;
+				}
+				
+				if (isTinyWorldAccepted)
+				{
+					
+					//Test Fullsized world
+					try {
+						isWorldAccepted = accept(world);
+					} catch (MinecraftInterfaceException | UnknownBiomeIndexException e) {
+						// Biome data for the world could not be obtained.
+						// Biome data included an unknown biome code.
+						// TODO log
+						rejectedWorldsCount++;
+						totalRejectedSeedCount++;
+						updateRejectedWorldsProgress(rejectedWorldsCount);
+						continue;
+					}
+				}
 				if (!isWorldAccepted) {
 					rejectedWorldsCount++;
 					totalRejectedSeedCount++;
@@ -329,6 +381,7 @@ public class BiomeSearcher implements Runnable {
 					continue;
 				}
 				acceptedWorldsCount++;
+				updateRejectedWorldsProgress(rejectedWorldsCount);
 				updateAcceptedWorldsProgress(rejectedWorldsCount, acceptedWorldsCount, world);
 				rejectedWorldsCount = 0;
 			}
