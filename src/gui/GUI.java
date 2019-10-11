@@ -45,7 +45,6 @@ import main.Main;
 import main.StructureSearcher;
 import main.StructureSearcher.Type;
 import java.awt.Font;
-import javax.swing.JTextPane;
 
 public class GUI {
 	
