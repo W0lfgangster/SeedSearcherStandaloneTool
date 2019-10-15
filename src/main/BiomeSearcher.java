@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.*;
+import java.util.Random;
 
 import Util.Util;
 import amidst.logging.AmidstLogger;
@@ -32,8 +33,11 @@ import gui.GUI;
  *
  * @author scudobuio, Zodsmar, YourCoalAlt
  */
-public class BiomeSearcher implements Runnable {
 
+
+
+public class BiomeSearcher implements Runnable {
+	Random r = new Random();
 	private WorldBuilder mWorldBuilder;
 
 	private MinecraftInterface mMinecraftInterface;
@@ -312,7 +316,8 @@ public class BiomeSearcher implements Runnable {
 		
 		while (acceptedWorldsCount < this.mMaximumMatchingWorldsCount && GUI.running) {
 			if (!GUI.paused) {
-				WorldSeed seed = WorldSeed.random();
+				
+				WorldSeed seed = WorldSeed.fromUserInput(String.valueOf(r.nextInt(1000000000)));
 				//tinyWorld is the same as world but the biomes are scaled 1/8th the size
 				World tinyWorld;
 				World world;
